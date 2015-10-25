@@ -81,6 +81,10 @@ def get_games():
         infos = game('td')
         date = datetime.strptime(infos[0].get_text(), '%a %b %d %I:%M %p')
         date = date.replace(year=datetime.now().year)
+        date = tz.localize(date)
+
+        if date < tz.localize(datetime.now()):
+            date = date.replace(year=datetime.now.year + 1)
         
         return Game(date, *map(lambda x: x.get_text(), infos[1:]))
 
@@ -100,8 +104,8 @@ def get_games():
 
 
 def create_event(game):
-    start = tz.localize(game.date)
-    end = tz.localize(game.date + game.duration)
+    start = game.date
+    end = game.date + game.duration
     sub_teams = config.get('teams', 'sub').split(',')
 
     result = service.events().list(calendarId="primary",
