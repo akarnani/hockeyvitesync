@@ -118,7 +118,9 @@ def create_event(game):
     if(len(results.get('items', [])) > 0):
         if game.rsvp is RSVP.no:
             for event in results.get('items'):
-                service.events().delete(calendarId="primary", eventId=event['id']).execute()
+                if event.get('summary', '') == game.get_summary() and event['start']['dateTime'] == game.date.isoformat():
+                    print("deleting event for 'no' RSVP", game)
+                    service.events().delete(calendarId="primary", eventId=event['id']).execute()
         print("not creating", game)
         return
 
