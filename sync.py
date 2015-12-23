@@ -87,7 +87,7 @@ def get_games():
         date = tz.localize(date)
 
         if date < tz.localize(datetime.now()):
-            date = date.replace(year=datetime.now.year + 1)
+            date = date.replace(year=datetime.now().year + 1)
 
         return Game(date, *map(lambda x: x.get_text(), infos[1:]))
 
