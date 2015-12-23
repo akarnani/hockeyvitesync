@@ -21,6 +21,7 @@ tz = timezone("America/Los_Angeles")
 config = ConfigParser()
 config.read('config')
 
+
 class RSVP(Enum):
     yes = 'yes'
     maybe = 'maybe'
@@ -37,6 +38,7 @@ class RSVP(Enum):
 
 
 class Game:
+
     def __init__(self, date, rink, home, away, rsvp, duration=timedelta(hours=1.5)):
         self.date = date
         self.duration = duration
@@ -76,6 +78,7 @@ def setup_google():
 
     service = build('calendar', 'v3', http=http)
 
+
 def get_games():
     def convertGame(game):
         infos = game('td')
@@ -85,20 +88,22 @@ def get_games():
 
         if date < tz.localize(datetime.now()):
             date = date.replace(year=datetime.now.year + 1)
-        
+
         return Game(date, *map(lambda x: x.get_text(), infos[1:]))
 
     s = requests.Session()
     r = s.get('http://hockeyvite.com/session/new')
     text = BeautifulSoup(r.text, 'html.parser')
 
-    submit = {'login': config.get('hockeyvite', 'username'), 'password': config.get('hockeyvite', 'password')}
+    submit = {'login': config.get(
+        'hockeyvite', 'username'), 'password': config.get('hockeyvite', 'password')}
     for field in text.form.find_all("input")[:2]:
         submit[field['name']] = field['value']
 
     s.post('http://hockeyvite.com/session', data=submit)
-    
-    games = BeautifulSoup(s.get('http://hockeyvite.com/games').text, 'html.parser')
+
+    games = BeautifulSoup(
+        s.get('http://hockeyvite.com/games').text, 'html.parser')
 
     return map(convertGame, games.select('table tr.txt11'))
 
@@ -112,7 +117,8 @@ def create_event(game):
                                    orderBy="startTime",
                                    singleEvents=True,
                                    sharedExtendedProperty="hockeyvite=true",
-                                   timeMax=(start + timedelta(seconds=5)).isoformat(),
+                                   timeMax=(
+                                       start + timedelta(seconds=5)).isoformat(),
                                    timeMin=start.isoformat())
     results = result.execute()
     if(len(results.get('items', [])) > 0):
@@ -120,10 +126,10 @@ def create_event(game):
             for event in results.get('items'):
                 if event.get('summary', '') == game.get_summary() and event['start']['dateTime'] == game.date.isoformat():
                     print("deleting event for 'no' RSVP", game)
-                    service.events().delete(calendarId="primary", eventId=event['id']).execute()
+                    service.events().delete(
+                        calendarId="primary", eventId=event['id']).execute()
         print("not creating", game)
         return
-
 
     if game.rsvp in (RSVP.yes, RSVP.maybe):
 
@@ -132,16 +138,14 @@ def create_event(game):
             return
 
         result = service.events().insert(calendarId="primary", body={'start': {'dateTime': start.isoformat()},
-                                                                    'summary': game.get_summary(),
-                                                                    'location': game.rink,
-                                                                    'end': {'dateTime': end.isoformat()},
-                                                                    'reminders': {'useDefault': False},
-                                                                    'colorId': '7',
-                                                                    'extendedProperties':{'shared': {'hockeyvite': True}}}).execute()
+                                                                     'summary': game.get_summary(),
+                                                                     'location': game.rink,
+                                                                     'end': {'dateTime': end.isoformat()},
+                                                                     'reminders': {'useDefault': False},
+                                                                     'colorId': '7',
+                                                                     'extendedProperties': {'shared': {'hockeyvite': True}}}).execute()
         print('created', game)
 
 
 setup_google()
 list(map(create_event, get_games()))
-
-
