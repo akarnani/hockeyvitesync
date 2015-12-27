@@ -5,12 +5,10 @@ from pytz import timezone
 from enum import Enum
 
 import httplib2
-import sys
 from configparser import ConfigParser
 
 from apiclient.discovery import build
 from oauth2client.file import Storage
-from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.tools import run_flow, argparser
 
@@ -128,8 +126,11 @@ def create_event(game):
                     print("deleting event for 'no' RSVP", game)
                     service.events().delete(
                         calendarId="primary", eventId=event['id']).execute()
-        print("not creating", game)
-        return
+        if game.get_summary() not in (event.get('summary', '') for event in results.get('items')):
+            pass
+        else:
+            print("not creating", game, "because it already exists")
+            return
 
     if game.rsvp in (RSVP.yes, RSVP.maybe):
 
