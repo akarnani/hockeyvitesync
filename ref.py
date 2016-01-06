@@ -94,7 +94,7 @@ def get_games(span=14):
                                             timeMin=start.isoformat())
         results = result.execute()
         if(len(results.get('items', [])) > 0):
-            print("Not creating {} because an overlapping event exists".format(game))
+            print("Not creating {} because it already exists".format(game))
 
         else:
             # create the event
