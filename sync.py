@@ -148,5 +148,6 @@ def create_event(game):
         print('created', game)
 
 
-setup_google()
-list(map(create_event, get_games()))
+if __name__ == '__main__':
+    setup_google()
+    list(map(create_event, get_games()))
