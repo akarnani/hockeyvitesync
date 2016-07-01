@@ -45,15 +45,15 @@ class Game:
         return "{} {}".format(self.resp.name.title(), self.league)
 
 
-def get_games(span=14):
-    def createGames(date):
-        games = BeautifulSoup(s.get("http://ihonc-ca.com/members/dayview.cgi",
-                                    params={'date': date.strftime('%Y-%m-%d')}).text, 'html.parser')
+def get_games():
+    def createGames():
+        games = BeautifulSoup(s.get("http://ihonc-ca.com/members/schedsearch.cgi",
+                                    params={'preset': 'future'}).text, 'html.parser')
         form = games.find('form')
         if not form:
             return []
         games = []
-        for row in form.find_all('input', {'type': 'checkbox'}):
+        for row in form.find_all('input', {'type': 'checkbox', 'name': 'import'}):
             row = row.find_parent('tr').find_all("td")
             row = [x.text for x in row[2:]]
             row[1] = row[1].replace('a', 'AM')
@@ -78,8 +78,8 @@ def get_games(span=14):
            data={'login_username': sync.config.get('ihonc', 'username'), 'login_password': sync.config.get('ihonc', 'password')})
 
     games = []
-    for l in (createGames(date.today() + x * timedelta(days=1)) for x in range(span)):
-        games.extend(l)
+    for l in createGames():
+        games.append(l)
 
     for game in games:
         start = game.date
