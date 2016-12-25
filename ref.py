@@ -63,7 +63,7 @@ def get_games():
                 continue
 
             when = datetime.strptime(
-                '{} {}'.format(*row[:2]), '%a %b %d %I:%M%p')
+                '{} {}'.format(*row[:2]), '%b %d %Y %I:%M%p')
             when = when.replace(year=datetime.now().year)
             when = tz.localize(when)
 
