@@ -62,8 +62,14 @@ def get_games():
             if Type.from_string(row[3]) not in (Type.ref, Type.line):
                 continue
 
-            when = datetime.strptime(
-                '{} {}'.format(*row[:2]), '%b %d %Y %I:%M%p')
+            for pattern in ('%b %d %Y %I:%M%p', '%a %b %d %I:%M%p'):
+                try:
+                    when = datetime.strptime(
+                        '{} {}'.format(*row[:2]), pattern)
+
+                    break
+                except ValueError:
+                    continue
             when = when.replace(year=datetime.now().year)
             when = tz.localize(when)
 
