@@ -54,29 +54,35 @@ def get_games():
             return []
         games = []
         for row in form.find_all('input', {'type': 'checkbox', 'name': 'import'}):
-            row = row.find_parent('tr').find_all("td")
-            row = [x.text for x in row[2:]]
-            row[1] = row[1].replace('a', 'AM')
-            row[1] = row[1].replace('p', 'PM')
+            try:
+                row = row.find_parent('tr').find_all("td")
+                row = [x.text for x in row[2:]]
+                row[1] = row[1].replace('a', 'AM')
+                row[1] = row[1].replace('p', 'PM')
 
-            if Type.from_string(row[3]) not in (Type.ref, Type.line):
-                continue
-
-            for pattern in ('%b %d %Y %I:%M%p', '%a %b %d %I:%M%p'):
-                try:
-                    when = datetime.strptime(
-                        '{} {}'.format(*row[:2]), pattern)
-
-                    break
-                except ValueError:
+                if Type.from_string(row[3]) not in (Type.ref, Type.line):
                     continue
-            when = when.replace(year=datetime.now().year)
-            when = tz.localize(when)
 
-            if when < tz.localize(datetime.now()):
-                when = when.replace(year=datetime.now().year + 1)
+                row[1] = row[1].replace("12:00n", "12:00PM")
+                for pattern in ('%b %d %Y %I:%M%p', '%a %b %d %I:%M%p'):
+                    try:
+                        when = datetime.strptime(
+                            '{} {}'.format(*row[:2]), pattern)
 
-            games.append(Game(when, *(x for x in row[3:] if x)))
+                        break
+                    except ValueError:
+                        continue
+
+                print(row[:2], when)
+                when = when.replace(year=datetime.now().year)
+                when = tz.localize(when)
+
+                if when < tz.localize(datetime.now()):
+                    when = when.replace(year=datetime.now().year + 1)
+
+                games.append(Game(when, *(x for x in row[3:] if x)))
+            except  Exception as e:
+                print("Couldn't create game because", e)
         return games
 
     s = requests.Session()
