@@ -37,16 +37,17 @@ class RSVP(Enum):
 
 class Game:
 
-    def __init__(self, date, rink, home, away, rsvp, duration=timedelta(hours=1.5)):
+    def __init__(self, date, rink, home, away, rsvp, id=None, duration=timedelta(hours=1.5)):
         self.date = date
         self.duration = duration
         self.rink = rink
         self.home = home
         self.away = away
         self.rsvp = RSVP.from_string(rsvp.lower())
+        self.id = id
 
     def __str__(self):
-        return "{} @ {} {} {} {}".format(self.home, self.away, self.date, self.rink, self.rsvp)
+        return "[{}] {} @ {} {} {} {}".format(self.id, self.home, self.away, self.date, self.rink, self.rsvp)
 
     def __repr__(self):
         return str(self)
@@ -87,7 +88,7 @@ def get_games():
         if date < tz.localize(datetime.now()):
             date = date.replace(year=datetime.now().year + 1)
 
-        return Game(date, *map(lambda x: x.get_text(), infos[1:]))
+        return Game(date, *map(lambda x: x.get_text(), infos[1:]), id=infos[-1].find('a')['href'].split('/')[-1])
 
     s = requests.Session()
     r = s.get('http://hockeyvite.com/session/new')
@@ -114,18 +115,14 @@ def create_event(game):
     result = service.events().list(calendarId="primary",
                                    orderBy="startTime",
                                    singleEvents=True,
-                                   sharedExtendedProperty="hockeyvite=true",
-                                   timeMax=(
-                                       start + timedelta(seconds=5)).isoformat(),
-                                   timeMin=start.isoformat())
+                                   sharedExtendedProperty="hockeyvite={}".format(game.id))
     results = result.execute()
     if(len(results.get('items', [])) > 0):
         if game.rsvp is RSVP.no:
             for event in results.get('items'):
-                if event.get('summary', '') == game.get_summary() and event['start']['dateTime'] == game.date.isoformat():
-                    print("deleting event for 'no' RSVP", game)
-                    service.events().delete(
-                        calendarId="primary", eventId=event['id']).execute()
+                print("deleting event for 'no' RSVP", game)
+                service.events().delete(
+                    calendarId="primary", eventId=event['id']).execute()
         if game.get_summary() not in (event.get('summary', '') for event in results.get('items')):
             pass
         else:
@@ -144,7 +141,7 @@ def create_event(game):
                                                                      'end': {'dateTime': end.isoformat()},
                                                                      'reminders': {'useDefault': False},
                                                                      'colorId': '7',
-                                                                     'extendedProperties': {'shared': {'hockeyvite': True}}}).execute()
+                                                                     'extendedProperties': {'shared': {'hockeyvite': game.id}}}).execute()
         print('created', game)
 
 
